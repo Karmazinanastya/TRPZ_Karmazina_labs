@@ -1,0 +1,35 @@
+﻿@startuml
+class Download {
+    + ID: int
+    + Status: string
+    + FilePath: string
+    + SpeedLimit: int
+    + StartTime: DateTime
+    + EndTime: DateTime
+    + DownloadedSize: int
+    + TotalSize: int
+    + CreatedAt: DateTime
+    + Statistics: List<DownloadStatistics>
+    + History: List<DownloadHistory>
+}
+
+class DownloadStatistics {
+    + ID: int
+    + DownloadID: int
+    + TotalDownloads: int
+}
+
+class DownloadHistory {
+    + ID: int
+    + DownloadID: int
+    + Date: DateTime
+    + Status: string
+}
+
+Download "1" o-- "1" DownloadStatistics : " DownloadStatistics"
+
+
+Download "1" *-- "*" DownloadHistory : " DownloadHistory"
+@enduml
+
+

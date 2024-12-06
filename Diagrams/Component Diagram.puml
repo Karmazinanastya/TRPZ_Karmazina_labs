@@ -1,0 +1,47 @@
+﻿@startuml
+node "Клієнт" {
+    component "UI (User Interface)" as UI
+}
+
+node "Сервер" {
+    package "Завантаження файлів" {
+        component "DownloadController" as DownloadController
+        component "DownloadService" as DownloadService
+        component "DownloadRepository" as DownloadRepository
+    }
+
+    package "Статистика завантажень" {
+        component "StatisticsController" as StatisticsController
+        component "StatisticsService" as StatisticsService
+        component "StatisticsRepository" as StatisticsRepository
+    }
+
+    package "Історія завантажень" {
+        component "HistoryController" as HistoryController
+        component "HistoryService" as HistoryService
+        component "HistoryRepository" as HistoryRepository
+    }
+}
+
+database "База даних" as Database {
+    artifact "DownloadTable" as DownloadTable
+    artifact "DownloadStatisticsTable" as StatisticsTable
+    artifact "DownloadHistoryTable" as HistoryTable
+}
+
+UI --> DownloadController
+DownloadController --> DownloadService : Логіка завантаження
+DownloadService --> DownloadRepository : Робота з таблицею
+DownloadRepository --> DownloadTable 
+
+UI --> StatisticsController 
+StatisticsController --> StatisticsService : Логіка статистики
+StatisticsService --> StatisticsRepository : Робота з таблицею
+StatisticsRepository --> StatisticsTable 
+
+UI --> HistoryController 
+HistoryController --> HistoryService : Логіка історії
+HistoryService --> HistoryRepository : Робота з таблицею
+HistoryRepository --> HistoryTable
+@enduml
+
