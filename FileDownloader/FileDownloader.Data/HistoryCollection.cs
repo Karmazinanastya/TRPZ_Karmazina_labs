@@ -2,9 +2,17 @@
 
 namespace FileDownloader.Data
 {
-    public static class LocalData
+    public class HistoryCollection
     {
-        public static List<History> historyList = new List<History>
+        public void AddHistory(History history) => HisstoryData.HistoryList.Add(history);
+        public void RemoveHistory(History history) => HisstoryData.HistoryList.Remove(history);
+        public IIterator<History> CreateIterator() => new HistoryIterator(HisstoryData.HistoryList);
+        public List<History> GetAll() => HisstoryData.HistoryList;
+    }
+
+    public static class HisstoryData
+    {
+        public static List<History> HistoryList = new List<History>
         {
             new History
             {
@@ -68,4 +76,6 @@ namespace FileDownloader.Data
             }
         };
     }
+
+
 }

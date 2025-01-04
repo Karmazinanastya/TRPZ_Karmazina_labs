@@ -1,5 +1,5 @@
 ﻿using FileDownloader.Data;
-using FileDownloader.Data.Models;
+using FileDownloader.UI.CommandPattern;
 using FileDownloader.UI.Services;
 using System.Windows;
 
@@ -13,15 +13,17 @@ namespace FileDownloader.UI
     /// </summary>
     public partial class MainWindow : Window
     {
-        DownloadItemsCollection items;
+        private readonly DownloadItemsCollection items;
+        private readonly CommandInvoker invoker;
 
         public MainWindow()
         {
             InitializeComponent();
             items = new DownloadItemsCollection();
+            invoker = new CommandInvoker();
         }
 
-        private void AddNewDownloadButton_Click(object sender, RoutedEventArgs e)
+        private async void AddNewDownloadButton_Click(object sender, RoutedEventArgs e)
         {
             DownloadListBoxItem item = new DownloadListBoxItem((int)(DownloadsListBox.Width * .95));
             item.CancelButton.Click += CancelButton_Click;
@@ -29,37 +31,48 @@ namespace FileDownloader.UI
             item.RemoveButton.Click += RemoveButton_Click;
 
             DownloadsListBox.Items.Add(item.DownloadBorder);
-
             items.Add(item);
         }
 
-        private void ViewHistoryButton_Click(object sender, RoutedEventArgs e)
+        private async void ViewHistoryButton_Click(object sender, RoutedEventArgs e)
         {
-            List<History> historyList = LocalData.historyList;
-            HistoryWindow historyWindow = new HistoryWindow(historyList);
-            historyWindow.Show();
+            var history = new HistoryCollection();
+            var viewHistoryCommand = new ViewHistoryCommand(history.GetAll());
+            await invoker.ExecuteCommandAsync(viewHistoryCommand);
         }
 
-        private void RemoveButton_Click(object sender, RoutedEventArgs e)
+        private async void RemoveButton_Click(object sender, RoutedEventArgs e)
         {
             var removeButton = (Button)sender;
-            DownloadsListBox.Items.Remove(items.GetByRemoveButton(removeButton).DownloadBorder);
-            items.Remove(removeButton);
+            var item = items.GetByRemoveButton(removeButton);
+
+            var removeCommand = new RemoveCommand(items, item);
+            await invoker.ExecuteCommandAsync(removeCommand);
+
+            DownloadsListBox.Items.Remove(item.DownloadBorder);
         }
 
-        private void CancelButton_Click(object sender, RoutedEventArgs e)
+        private async void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             var cancelButton = (Button)sender;
             var item = items.GetByCancelButton(cancelButton);
-            item.TokenSource.Cancel();
-            item.TokenSource.Dispose();
+
+            var cancelCommand = new DownloadCommand(item);
+            await invoker.ExecuteCommandAsync(cancelCommand);
         }
 
         private async void Download_ClickAsync(object sender, RoutedEventArgs e)
         {
-            var downloadButton = ((Button)sender);
+            var downloadButton = (Button)sender;
+            var item = items.GetByDownloadButton(downloadButton);
 
-            await items.GetByDownloadButton(downloadButton).DownloadAsync();
+            var downloadCommand = new DownloadCommand(item);
+            await invoker.ExecuteCommandAsync(downloadCommand);
+        }
+
+        private async void UndoButton_Click(object sender, RoutedEventArgs e)
+        {
+            await invoker.UndoLastCommandAsync();
         }
     }
 }

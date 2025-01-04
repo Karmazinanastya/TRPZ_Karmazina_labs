@@ -2,6 +2,21 @@
 
 namespace FileDownloader.UI.SpeedPriorityStrategy
 {
+    public class SpeedContext
+    {
+        private ISpeedStrategy _speedStrategy;
+
+        public void SetStrategy(ISpeedStrategy strategy)
+        {
+            _speedStrategy = strategy;
+        }
+
+        public int GetSpeedLimit()
+        {
+            return _speedStrategy.GetSpeedLimit();
+        }
+    }
+
     public class HighSpeedStrategy : ISpeedStrategy
     {
         public int GetSpeedLimit() => 5000 * 1024; // 5000 KB/s

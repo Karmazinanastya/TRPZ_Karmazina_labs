@@ -6,9 +6,7 @@ using System.Net.Http;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows;
-using FileDownloader.UI.SpeedPriorityStrategy;
-using FileDownloader.UI.HistoryBuilders;
-using FileDownloader.UI.FactoryMethod_SpeedStrategy;
+using FileDownloader.Data.Models;
 
 namespace FileDownloader.UI.Services
 {
@@ -161,64 +159,96 @@ namespace FileDownloader.UI.Services
             {
                 Filter = "All files (*.*)|*.*"
             };
+
             var dialogResult = dlg.ShowDialog();
 
             if (dialogResult == true)
             {
                 var filePath = dlg.FileName;
                 var fileName = Path.GetFileName(filePath);
-                var url = DownloadTextBox.Text;
-                var priority = (int)((ComboBoxItem)PriorityComboBox.SelectedItem).Tag;
 
-                try
+                if (!Uri.IsWellFormedUriString(DownloadTextBox.Text, UriKind.Absolute))
                 {
-                    TokenSource = new CancellationTokenSource();
-                    var strategyFactory = new DefaultSpeedStrategyFactory();
-                    var facade = new DownloadFacade(strategyFactory);
+                    MessageBox.Show("Invalid URI, please enter a valid one.");
+                    return;
+                }
+
+                TokenSource = new CancellationTokenSource();
+                using (var client = new HttpClientWithProgress(DownloadTextBox.Text, filePath, TokenSource.Token))
+                {
+                    TokenSource.Token.Register(() =>
+                    {
+                        client.CancelPendingRequests();
+                        ShowDownloadStuff();
+                    });
 
                     HideDownloadStuff();
 
-                    await facade.DownloadFileAsync(
-                        url,
-                        filePath,
-                        priority,
-                        DownloadProgressBar,
-                        ProgressLabel,
-                        TokenSource.Token);
+                    try
+                    {
+                        client.ProgressChanged += (totalFileSize, totalBytesDownloaded, progressPercentage) =>
+                        {
+                            Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                if (progressPercentage.HasValue)
+                                {
+                                    DownloadProgressBar.Value = progressPercentage.Value;
+                                    ProgressLabel.Content = $"{(int)progressPercentage.Value}%";
+                                }
+                            });
+                        };
 
-                    endDate = DateTime.Now;
+                        await Task.Run(() => client.StartDownloadAsync());
+                        endDate = DateTime.Now;
 
-                    var history = new HistoryBuilder()
-                        .SetId(LocalData.historyList.Count + 1)
-                        .SetFileName(fileName)
-                        .SetFilePath(filePath)
-                        .SetSpeedPriority(priority)
-                        .SetStartTime(startDate)
-                        .SetEndTime(endDate)
-                        .SetCreatedAt(DateTime.Now)
-                        .Build();
+                        if (!TokenSource.IsCancellationRequested)
+                        {
+                            var res = MessageBox.Show($"Downloading {fileName} completed!\nDo you want to open it?",
+                                                      "Success", MessageBoxButton.YesNo, MessageBoxImage.Information);
 
-                    LocalData.historyList.Add(history);
+                            if (res == MessageBoxResult.Yes)
+                            {
+                                Process.Start(filePath);
+                            }
+                        }
+                        else
+                        {
+                            var res = MessageBox.Show($"Downloading {fileName} canceled!\nDo you want to remove downloaded files?",
+                                                      "Canceled", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
-                    MessageBox.Show($"Downloading {fileName} completed!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                            if (res == MessageBoxResult.Yes)
+                            {
+                                File.Delete(filePath);
+                            }
+                        }
+                    }
+                    catch (HttpRequestException exception)
+                    {
+                        MessageBox.Show($"Error: {exception.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        MessageBox.Show("Downloading was canceled.");
+                    }
+                    finally
+                    {
+                        ShowDownloadStuff();
+                        TokenSource.Dispose();
+
+                        var historyColections = new HistoryCollection();
+                        historyColections.AddHistory(
+                            new History
+                            {
+                                Id = HisstoryData.HistoryList.Count + 1,
+                                FileName = fileName,
+                                FilePath = filePath,
+                                SpeedPriority = (int)((ComboBoxItem)PriorityComboBox.SelectedItem).Tag,
+                                StartTime = startDate,
+                                EndTime = endDate,
+                                CreatedAt = DateTime.Now
+                            });
+                    }
                 }
-                catch (OperationCanceledException)
-                {
-                    MessageBox.Show("Download was canceled.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-                finally
-                {
-                    ShowDownloadStuff();
-                    TokenSource.Dispose();
-                }
-            }
-            else
-            {
-                MessageBox.Show("Invalid URI. Please enter a valid one.");
             }
         }
     }
