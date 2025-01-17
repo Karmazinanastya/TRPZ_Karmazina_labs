@@ -44,8 +44,8 @@ namespace FileDownloader.UI
         private async void RemoveButton_Click(object sender, RoutedEventArgs e)
         {
             var removeButton = (Button)sender;
-            var item = items.GetByRemoveButton(removeButton);
 
+            var item = items.GetByRemoveButton(removeButton);
             var removeCommand = new RemoveCommand(items, item);
             await invoker.ExecuteCommandAsync(removeCommand);
 
@@ -73,6 +73,16 @@ namespace FileDownloader.UI
         private async void UndoButton_Click(object sender, RoutedEventArgs e)
         {
             await invoker.UndoLastCommandAsync();
+        }
+
+        private async void ExecuteAllDownloads_Click(object sender, RoutedEventArgs e)
+        {
+            await items.ExecuteAllAsync();
+        }
+
+        private async void UndoAllDownloads_Click(object sender, RoutedEventArgs e)
+        {
+            await items.UndoAllAsync();
         }
     }
 }

@@ -10,5 +10,6 @@
         <ListBox x:Name="DownloadsListBox" HorizontalAlignment="Left" Height="399" Margin="10,10,0,0" VerticalAlignment="Top" Width="375"/>
         <Button x:Name="AddNewDownloadButton" Content="New Download" HorizontalAlignment="Left" Margin="400,24,0,0" VerticalAlignment="Top" Width="119" Click="AddNewDownloadButton_Click"/>
         <Button x:Name="HistoryButton" Content="History" HorizontalAlignment="Left" Margin="400,64,0,0" VerticalAlignment="Top" Width="119" Click="ViewHistoryButton_Click"/>
+        <Button x:Name="ExecuteAllDownloadsButton" Content="Start All" HorizontalAlignment="Left" Margin="400,104,0,0" VerticalAlignment="Top" Width="119" Click="ExecuteAllDownloads_Click"/>
     </Grid>
 </Window>

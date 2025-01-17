@@ -1,4 +1,5 @@
-﻿using System.Windows.Controls;
+﻿using FileDownloader.UI.CompositePattern;
+using System.Windows.Controls;
 
 namespace FileDownloader.UI.Services
 {
@@ -14,23 +15,38 @@ namespace FileDownloader.UI.Services
             cancelToItems = new Dictionary<Button, DownloadListBoxItem>();
             removeToItems = new Dictionary<Button, DownloadListBoxItem>();
         }
+        private readonly DownloadComposite _rootComposite = new();
+
+        public void Add(DownloadListBoxItem item)
+        {
+            var leaf = new DownloadLeaf(item);
+            CheckIfNotContains(item, item.DownloadButton, item.CancelButton, item.RemoveButton);
+            downloadToItems.Add(item.DownloadButton, item);
+            cancelToItems.Add(item.CancelButton, item);
+            removeToItems.Add(item.RemoveButton, item);
+            _rootComposite.Add(leaf);
+        }
+
         public void Remove(Button removeButton)
         {
             CheckIfContains(removeToItems, removeButton);
             var item = GetByRemoveButton(removeButton);
 
+            var leaf = new DownloadLeaf(item);
+            _rootComposite.Remove(leaf);
             downloadToItems.Remove(item.DownloadButton);
             cancelToItems.Remove(item.CancelButton);
             removeToItems.Remove(removeButton);
         }
 
-
-        public void Add(DownloadListBoxItem item)
+        public async Task ExecuteAllAsync()
         {
-            CheckIfNotContains(item, item.DownloadButton, item.CancelButton, item.RemoveButton);
-            downloadToItems.Add(item.DownloadButton, item);
-            cancelToItems.Add(item.CancelButton, item);
-            removeToItems.Add(item.RemoveButton, item);
+            await _rootComposite.ExecuteAsync();
+        }
+
+        public async Task UndoAllAsync()
+        {
+            await _rootComposite.UndoAsync();
         }
         public DownloadListBoxItem GetByDownloadButton(Button button)
         {
