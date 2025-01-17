@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows;
 using FileDownloader.UI.ObserverPattern;
+using FileDownloader.UI.TemplateMethod;
 
 namespace FileDownloader.UI.Services
 {
@@ -149,15 +150,6 @@ namespace FileDownloader.UI.Services
 
         public async Task DownloadAsync()
         {
-            var downloadManager = new DownloadManager();
-
-            // Додаємо спостерігачі для прогрес-бару та лейблу
-            downloadManager.Attach(new ProgressBarObserver(DownloadProgressBar));
-            downloadManager.Attach(new LabelObserver(ProgressLabel));
-
-            // Оповіщення про початок завантаження
-            downloadManager.Notify(new DownloadState { Progress = 0, StatusMessage = "Starting download..." });
-
             var dlg = new SaveFileDialog
             {
                 Filter = "All files (*.*)|*.*"
@@ -168,7 +160,6 @@ namespace FileDownloader.UI.Services
             if (dialogResult == true)
             {
                 var filePath = dlg.FileName;
-                var fileName = Path.GetFileName(filePath);
 
                 if (!Uri.IsWellFormedUriString(DownloadTextBox.Text, UriKind.Absolute))
                 {
@@ -177,69 +168,18 @@ namespace FileDownloader.UI.Services
                 }
 
                 TokenSource = new CancellationTokenSource();
-                using (var client = new HttpClientWithProgress(DownloadTextBox.Text, filePath, TokenSource.Token))
-                {
-                    // Реєстрація скасування
-                    TokenSource.Token.Register(() =>
-                    {
-                        client.CancelPendingRequests();
-                        ShowDownloadStuff();
-                    });
 
-                    HideDownloadStuff();
+                var downloadManager = new DownloadManager();
+                downloadManager.Attach(new ProgressBarObserver(DownloadProgressBar));
+                downloadManager.Attach(new LabelObserver(ProgressLabel));
 
-                    try
-                    {
-                        // Оновлення прогресу
-                        client.ProgressChanged += (totalFileSize, totalBytesDownloaded, progressPercentage) =>
-                        {
-                            Application.Current.Dispatcher.Invoke(() =>
-                            {
-                                downloadManager.Notify(new DownloadState
-                                {
-                                    Progress = progressPercentage ?? 0,
-                                    StatusMessage = "Downloading..."
-                                });
-                            });
-                        };
+                var downloader = new HttpFileDownloader(DownloadTextBox.Text, filePath, downloadManager, TokenSource);
 
-                        // Початок завантаження
-                        await Task.Run(() => client.StartDownloadAsync());
+                HideDownloadStuff();
 
-                        // Оповіщення про завершення
-                        downloadManager.Notify(new DownloadState { Progress = 100, StatusMessage = "Download completed", IsCompleted = true });
+                await downloader.DownloadFileAsync();
 
-                        var res = MessageBox.Show($"Downloading {fileName} completed!\nDo you want to open it?",
-                                                  "Success", MessageBoxButton.YesNo, MessageBoxImage.Information);
-
-                        if (res == MessageBoxResult.Yes)
-                        {
-                            Process.Start(filePath);
-                        }
-                    }
-                    catch (TaskCanceledException)
-                    {
-                        // Завантаження скасовано
-                        downloadManager.Notify(new DownloadState { StatusMessage = "Download canceled", IsCanceled = true });
-
-                        var res = MessageBox.Show($"Downloading {fileName} canceled!\nDo you want to remove downloaded files?",
-                                                  "Canceled", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-                        if (res == MessageBoxResult.Yes)
-                        {
-                            File.Delete(filePath);
-                        }
-                    }
-                    catch (HttpRequestException exception)
-                    {
-                        MessageBox.Show($"Error: {exception.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
-                    finally
-                    {
-                        ShowDownloadStuff();
-                        TokenSource.Dispose();
-                    }
-                }
+                ShowDownloadStuff();
             }
         }
 
