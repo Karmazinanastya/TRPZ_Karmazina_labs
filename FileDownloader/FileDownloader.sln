@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35312.102
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileDownloader.UI", "FileDownloader.UI\FileDownloader.UI.csproj", "{903862B5-14E7-442E-A855-7D11EDC4BF49}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileDownloader.UI", "FileDownloader.UI\FileDownloader.UI.csproj", "{903862B5-14E7-442E-A855-7D11EDC4BF49}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileDownloader.Data", "FileDownloader.Data\FileDownloader.Data.csproj", "{B6A9C645-CD07-4614-8C59-EEE3328F79E6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileDownloader.Data", "FileDownloader.Data\FileDownloader.Data.csproj", "{B6A9C645-CD07-4614-8C59-EEE3328F79E6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Streetcode.Email", "..\SoftServ\Streetcode-Server-September\Streetcode\Streetcode.Email\Streetcode.Email.csproj", "{61F49E8E-F8FF-4D43-A721-2033F9A0B0CA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileDownloader", "FileDownloader\FileDownloader.csproj", "{C55307DE-2DAE-43D7-99CB-90483F21164C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +23,10 @@ Global
 		{B6A9C645-CD07-4614-8C59-EEE3328F79E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B6A9C645-CD07-4614-8C59-EEE3328F79E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B6A9C645-CD07-4614-8C59-EEE3328F79E6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{61F49E8E-F8FF-4D43-A721-2033F9A0B0CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{61F49E8E-F8FF-4D43-A721-2033F9A0B0CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{61F49E8E-F8FF-4D43-A721-2033F9A0B0CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{61F49E8E-F8FF-4D43-A721-2033F9A0B0CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C55307DE-2DAE-43D7-99CB-90483F21164C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C55307DE-2DAE-43D7-99CB-90483F21164C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C55307DE-2DAE-43D7-99CB-90483F21164C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C55307DE-2DAE-43D7-99CB-90483F21164C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

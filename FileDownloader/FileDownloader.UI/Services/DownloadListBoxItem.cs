@@ -6,7 +6,7 @@ using System.Net.Http;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows;
-using FileDownloader.Data.Models;
+using FileDownloader.UI.ObserverPattern;
 
 namespace FileDownloader.UI.Services
 {
@@ -149,11 +149,14 @@ namespace FileDownloader.UI.Services
 
         public async Task DownloadAsync()
         {
-            var startDate = DateTime.Now;
-            var endDate = DateTime.Now;
+            var downloadManager = new DownloadManager();
 
-            DownloadProgressBar.Value = 0;
-            ProgressLabel.Content = "0%";
+            // Додаємо спостерігачі для прогрес-бару та лейблу
+            downloadManager.Attach(new ProgressBarObserver(DownloadProgressBar));
+            downloadManager.Attach(new LabelObserver(ProgressLabel));
+
+            // Оповіщення про початок завантаження
+            downloadManager.Notify(new DownloadState { Progress = 0, StatusMessage = "Starting download..." });
 
             var dlg = new SaveFileDialog
             {
@@ -176,6 +179,7 @@ namespace FileDownloader.UI.Services
                 TokenSource = new CancellationTokenSource();
                 using (var client = new HttpClientWithProgress(DownloadTextBox.Text, filePath, TokenSource.Token))
                 {
+                    // Реєстрація скасування
                     TokenSource.Token.Register(() =>
                     {
                         client.CancelPendingRequests();
@@ -186,70 +190,59 @@ namespace FileDownloader.UI.Services
 
                     try
                     {
+                        // Оновлення прогресу
                         client.ProgressChanged += (totalFileSize, totalBytesDownloaded, progressPercentage) =>
                         {
                             Application.Current.Dispatcher.Invoke(() =>
                             {
-                                if (progressPercentage.HasValue)
+                                downloadManager.Notify(new DownloadState
                                 {
-                                    DownloadProgressBar.Value = progressPercentage.Value;
-                                    ProgressLabel.Content = $"{(int)progressPercentage.Value}%";
-                                }
+                                    Progress = progressPercentage ?? 0,
+                                    StatusMessage = "Downloading..."
+                                });
                             });
                         };
 
+                        // Початок завантаження
                         await Task.Run(() => client.StartDownloadAsync());
-                        endDate = DateTime.Now;
 
-                        if (!TokenSource.IsCancellationRequested)
+                        // Оповіщення про завершення
+                        downloadManager.Notify(new DownloadState { Progress = 100, StatusMessage = "Download completed", IsCompleted = true });
+
+                        var res = MessageBox.Show($"Downloading {fileName} completed!\nDo you want to open it?",
+                                                  "Success", MessageBoxButton.YesNo, MessageBoxImage.Information);
+
+                        if (res == MessageBoxResult.Yes)
                         {
-                            var res = MessageBox.Show($"Downloading {fileName} completed!\nDo you want to open it?",
-                                                      "Success", MessageBoxButton.YesNo, MessageBoxImage.Information);
-
-                            if (res == MessageBoxResult.Yes)
-                            {
-                                Process.Start(filePath);
-                            }
+                            Process.Start(filePath);
                         }
-                        else
-                        {
-                            var res = MessageBox.Show($"Downloading {fileName} canceled!\nDo you want to remove downloaded files?",
-                                                      "Canceled", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        // Завантаження скасовано
+                        downloadManager.Notify(new DownloadState { StatusMessage = "Download canceled", IsCanceled = true });
 
-                            if (res == MessageBoxResult.Yes)
-                            {
-                                File.Delete(filePath);
-                            }
+                        var res = MessageBox.Show($"Downloading {fileName} canceled!\nDo you want to remove downloaded files?",
+                                                  "Canceled", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                        if (res == MessageBoxResult.Yes)
+                        {
+                            File.Delete(filePath);
                         }
                     }
                     catch (HttpRequestException exception)
                     {
                         MessageBox.Show($"Error: {exception.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
-                    catch (TaskCanceledException)
-                    {
-                        MessageBox.Show("Downloading was canceled.");
-                    }
                     finally
                     {
                         ShowDownloadStuff();
                         TokenSource.Dispose();
-
-                        var historyColections = new HistoryCollection();
-                        historyColections.AddHistory(
-                            new History
-                            {
-                                Id = HisstoryData.HistoryList.Count + 1,
-                                FileName = fileName,
-                                FilePath = filePath,
-                                SpeedPriority = (int)((ComboBoxItem)PriorityComboBox.SelectedItem).Tag,
-                                StartTime = startDate,
-                                EndTime = endDate,
-                                CreatedAt = DateTime.Now
-                            });
                     }
                 }
             }
         }
+
+
     }
 }
